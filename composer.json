@@ -1,0 +1,16 @@
+{
+    "authors": [
+        {
+            "name": "Daniel Hernandez",
+            "email": "daniel.hernandez.job@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Xarenisoft\\ORM": "src/"
+        }
+    },
+    "require": {
+        "catfan/medoo": "^1.7"
+    }
+}
