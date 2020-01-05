@@ -60,16 +60,38 @@ class Engine{
        }
     }
 
+    public function findOne($classNameOrModel,array $where){
+        $this->find($classNameOrModel,$where);
+        //here i will do more
+    }
     public function find($classNameOrModel,array $where){
         if (\is_string($classNameOrModel)) {
             $model=$this->provide($className);
         }else{
             $model=$classNameOrModel;
         }
-        $this->pdo->query(
+        $result=$this->pdo->query(
             $model->getTableName(),
             $model->getTableFields(),
             $where
         );
+        //I will need to map, in the very firts phase , I only will map the properties but it's necessary to map relations too.
+
+
+        //here I notice if has relation ships(note, a different approach is to send a join , and do all the process here)
+
+        //here will query that relationships.
+
+    }
+
+    public static function isManageble($v){
+        if(\is_object($v) && $v instanceof Model){
+            return true;
+        }
+        if(\is_array($v)){ //simple arrays are manageble
+            return true;
+        }
+        //objects that not extend from model aren't manageble,
+        return false;
     }
 }
