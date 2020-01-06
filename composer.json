@@ -7,10 +7,12 @@
     ],
     "autoload": {
         "psr-4": {
-            "Xarenisoft\\ORM": "src/"
+            "Xarenisoft\\ORM\\": "src/"
         }
     },
     "require": {
-        "catfan/medoo": "^1.7"
+        "catfan/medoo": "^1.7",
+        "phpunit/phpunit": "^8.5",
+        "league/event": "^2.2"
     }
 }

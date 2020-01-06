@@ -1,5 +1,6 @@
 <?php 
 namespace Xarenisoft\ORM;
+
 /**
  * Intension de esta clase es unicamente incrementar la velocidad de consulta e insercion.
  * 
@@ -7,7 +8,7 @@ namespace Xarenisoft\ORM;
  */
 class Model {
     protected $primaryKey="id";
-    public $fillable=[]; #atrtibutos de la tabla , opcionalmente pueden ser clase=>'nombre_de_campo'
+    protected $fillable=[]; #atrtibutos de la tabla , opcionalmente pueden ser clase=>'nombre_de_campo'
 
     protected $hidden=[];
 
@@ -20,16 +21,22 @@ class Model {
         return $this->fillable;
     }
     public function getTableFields(){
-        return array_keys($this->fillable);
+        return array_values($this->fillable);
     }
     public function getTableName(){
         return $this->table;
     }
     public function getMappedTableValues():array{
         $table=[];
+        print_r($this->fillable);
         foreach ($this->fillable as $propertyeClass => $fieldName) {
-            $table[$fieldName]=$this->{$propertyeClass};
+            if(is_int($propertyeClass)){
+                $table[$fieldName]=$this->{$fieldName};
+            }else{
+                    $table[$fieldName]=$this->{$propertyeClass};
+            }   
         }
+        print_r($table);
         return $table;
     }
     public function isSerialId(){
@@ -37,6 +44,12 @@ class Model {
     }
     public function setPrimaryId($value){
         $this->{$this->primaryKey}=$value;
+    }
+    public function getPrimaryId(){
+        return $this->{$this->primaryKey};
+    }
+    public function getPrimaryKeyName(){
+        return $this->primaryKey;
     }
     public function hasList():bool{
         foreach ($this as $property => $value) {
@@ -57,5 +70,8 @@ class Model {
                 return true;
             }
         }
+    }
+    public function hasTableName(){
+        return emtpy($this->table);
     }
 }

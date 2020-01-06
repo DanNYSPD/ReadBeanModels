@@ -2,12 +2,13 @@
 namespace Xarenisoft\ORM;
 
 use Medoo\Medoo;
+use League\Event\Emitter;
 use Xarenisoft\ORM\Model;
 /**
  *  @author Daniel Hernandez <daniel.hernandez.job@gmail.com>
  *  The main goal and philosophy of this class is to be less intrusive than other libraries, 
  *  so we don't have to change the current clases that we have, 
- *  to be more flexible with the  class  property names ,table names  and table columns name(there is an intern array mapper),
+ *  second:to be more flexible with the  class  property names ,table names  and table columns name(there is an intern array mapper),
  *  use not static method calls.
  *  
  * To have a decopled class manager for CRUD operations instead of one single class.
@@ -15,6 +16,21 @@ use Xarenisoft\ORM\Model;
  * 
  */
 class Engine{
+
+    
+    
+    public function __construct(Medoo $pdo){
+         $this->pdo=$pdo;
+         $this->emitter = new Emitter;
+
+       //  $this->pdo=$this->pdo->debug();
+    }
+    /**
+     * Undocumented variable
+     *
+     * @var Emitter
+     */
+    public $emitter;
     /**
      * 
      *
@@ -29,6 +45,9 @@ class Engine{
      */
     public function provide(string $className){
         $obj= new $className;
+        if(!$obj->hasTableName()){
+            //$obj=
+        }
         return new $obj;
     }
     /**
@@ -40,24 +59,31 @@ class Engine{
      */
     public function store(Model $model){
        #$res= $this->pdo->query("SELECT id from {$model->table} where {$model->primaryKey}={$model->{$model->primaryKey}}");
-       $this->find($model);
+       $res=$this->find($model,[$model->getPrimaryKeyName(),$model->getPrimaryId()]);
+       var_dump($res);
        if($res!=null){
+        $this->emitter->emit('insert');
         $this->pdo->insert(
             $model->getTableName(),
-            $this->getMappedTableValues()
+            $model->getMappedTableValues()
         );
+        $this->emitter->emit('inserted');
          if($isSerialId){
              $model->setPrimaryId($this->pdo->id());
          } 
+
        }else{
+           $this->emitter->emit('update');
            $this->pdo->update(
             $model->getTableName(),
-            $this->getMappedTableValues(),
+            $model->getMappedTableValues(),
              [
-                $model->primaryKey=> $model->{$model->primaryKey}
+                $model->getPrimaryKeyName()=> $model->getPrimaryId()
              ]
            );
+           $this->emitter->emit('updated');
        }
+       return $model;
     }
 
     public function findOne($classNameOrModel,array $where){
@@ -70,11 +96,17 @@ class Engine{
         }else{
             $model=$classNameOrModel;
         }
-        $result=$this->pdo->query(
+        print_r($model->getTableFields());
+         
+        $result=$this->pdo->select(
             $model->getTableName(),
-            $model->getTableFields(),
+            //[],
+          $model->getTableFields(),
             $where
         );
+        echo "\n";
+        var_dump($result);
+        var_dump( $this->pdo->error() );
         //I will need to map, in the very firts phase , I only will map the properties but it's necessary to map relations too.
 
 
