@@ -11,6 +11,7 @@ class Person extends Model{
     public $isParent=true;
     public $table='person';
     protected $fillable=[
+        'bird',
         'name',
         'age',
         'isParent'=>'is_parent'

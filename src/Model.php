@@ -1,6 +1,5 @@
 <?php 
 namespace Xarenisoft\ORM;
-
 /**
  * Intension de esta clase es unicamente incrementar la velocidad de consulta e insercion.
  * 
@@ -52,12 +51,21 @@ class Model {
         return $this->primaryKey;
     }
     public function hasList():bool{
+        /*
         foreach ($this as $property => $value) {
             if(is_object($this->{$property})){
                 return true;
             }
         }
+        */
+        foreach ($this as $property => $value) {
+            //we check if there is a property with this pattern
+            if(1===\preg_match('/^own.*List$/',$property)){
+                return true;
+            }
+        }
     }
+    
     /**
      * By the default properties which name end with List ,pattern: <.*List> are tables . 
      * 
@@ -74,4 +82,5 @@ class Model {
     public function hasTableName(){
         return emtpy($this->table);
     }
+
 }

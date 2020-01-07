@@ -1,9 +1,13 @@
 <?php
 
 use Medoo\Medoo;
+//use RedBeanPHP\R;
 use Xarenisoft\ORM\Engine;
+use RedBeanPHP\Facade as R;
+//use \RedBeanPHP\R as R;
 use PHPUnit\Framework\TestCase;
-
+use Xarenisoft\ORM\RedBeanEngine;
+use RedBeanPHP\Util\DispenseHelper;
 
 class PersonTest extends TestCase {
     /**
@@ -25,30 +29,41 @@ class PersonTest extends TestCase {
 
         $this->engine= new Engine($medoo);
         
-
+        RedBeanEngine::setup(
+            'pgsql:host=localhost;dbname=people',
+            'postgres',
+            '123456'
+        );
+        
     }
 
     public function testinsert(){
-        $p= new Person();
+        $personNative= new Person();
 
-        $p->age=12;
-        $p->name="dan";
+        $personNative->age=12;
+        $personNative->name="dan";
         
-        //in this case 
+        $c=RedBeanEngine::dispense("child");
+        $c->name="jan";
+        $c->bird= new DateTime(); 
+        $c2=RedBeanEngine::dispense("child");
+        $c2->name="xan";
+        $c2->bird= new DateTime(); 
+        echo json_encode($personNative,JSON_PRETTY_PRINT);
+        $personNative->bird= new DateTime();
+        //debe inicial en own y terminar en List
+        $personNative->ownChildList=[
+           $c,$c2
+        ];
+        RedBeanEngine::store($personNative);
+        DispenseHelper::setEnforceNamingPolicy(false);
         
-
-        $this->engine->emitter->addListener('inserted',function(){
-            echo "inserted";
-        });
-        $this->engine->emitter->addListener('updated',function(){
-            echo "updated";
-        });
-        $this->engine->store($p);
     }
 
     public function querytest(){
-        //this must return 
-        $person=$this->engine->find(Person::class,['id'=>1]);
-
+        //this must return
+        $person=$this->engine->find(Person::class, ['id'=>1]);
+        
     }
+    
 }
