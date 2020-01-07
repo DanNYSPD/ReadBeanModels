@@ -1,4 +1,6 @@
 {
+    "name": "xarenisoft/redbean-models",
+    "description": "ReadBean extension model",
     "authors": [
         {
             "name": "Daniel Hernandez",
