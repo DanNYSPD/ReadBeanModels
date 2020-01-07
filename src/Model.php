@@ -25,6 +25,9 @@ class Model {
     public function getTableName(){
         return $this->table;
     }
+    public function setTableName(string $tableName){
+        return $this->table=$tableName;
+    }
     public function getMappedTableValues():array{
         $table=[];
         print_r($this->fillable);
@@ -65,7 +68,7 @@ class Model {
             }
         }
     }
-    
+
     /**
      * By the default properties which name end with List ,pattern: <.*List> are tables . 
      * 
@@ -80,7 +83,7 @@ class Model {
         }
     }
     public function hasTableName(){
-        return emtpy($this->table);
+        return !empty($this->table);
     }
 
 }

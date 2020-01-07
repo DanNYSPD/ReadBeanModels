@@ -39,10 +39,20 @@ class RedBeanEngine extends Facade{
         $modelObj=null;
         if(\is_string($model)){
             $model= new $model();
+            
         }else{
             $modelObj= $model;
         }
-        $bean=self::dispense($model->getTableName());
+
+        if(!$modelObj->hasTableName()){
+            #echo "class:".(get_class($modelObj));
+            #echo "class:".self::get_class_name(get_class($modelObj));
+            $modelObj->setTableName(self::get_class_name(get_class($modelObj)));
+           # echo self::decamelize($modelObj->getTableName());
+            $modelObj->setTableName(self::decamelize($modelObj->getTableName()));
+            #echo "\n".$modelObj->getTableName();
+        }
+        $bean=self::dispense($modelObj->getTableName());
         foreach ($model->getFillable() as $key => $fieldName) {
             if(\is_int($key)){
                 //if key is numeric and  because redbean only allow snake case, we need to convert 'camelCase' and 'PascalCase' to snake_case
@@ -55,12 +65,38 @@ class RedBeanEngine extends Facade{
         //besides fillable ,the model can have ownXList so
         foreach ($model as $property => $value) {
             if(self::isList($property)){
-                $bean->{$property}=$model->{$property};
+               // $bean->{$property}=$model->{$property};
+                //now we must verify that all the elements are Beans or "Model"
+                if(\is_array($model->{$property})){
+                    $bean->{$property}=[];//we ensure the correct array initialization
+                    //this can be heavy in performance terms but for this version we won't worry about that.
+                    foreach ($model->{$property} as $element) {
+                        if($element instanceof Model){
+                            //here we call recursibly
+                            
+                            $bean->{$property}[]=self::createBean($element);
+                        }else{
+                            $bean->{$property}[]=$element;
+                        }
+                    }
+                }else if(null!==$bean->{$property}){
+                    throw new RuntimeException("property :$property is not an array or null");
+                }
             }
         }
         return $bean;
     }
     private static function  decamelize($string) {
         return strtolower(preg_replace(['/([a-z\d])([A-Z])/', '/([^_])([A-Z][a-z])/'], '$1_$2', $string));
+    }
+    private static function get_class_name($classname)
+    {
+        if ($pos = strrpos($classname, '\\')) 
+        if($pos!=-1){
+            return substr($classname, $pos + 1);
+        }
+
+        
+        return $classname;
     }
 }

@@ -2,9 +2,10 @@
 
 use Medoo\Medoo;
 //use RedBeanPHP\R;
+use Xarenisoft\ORM\Child;
 use Xarenisoft\ORM\Engine;
-use RedBeanPHP\Facade as R;
 //use \RedBeanPHP\R as R;
+use RedBeanPHP\Facade as R;
 use PHPUnit\Framework\TestCase;
 use Xarenisoft\ORM\RedBeanEngine;
 use RedBeanPHP\Util\DispenseHelper;
@@ -43,7 +44,8 @@ class PersonTest extends TestCase {
         $personNative->age=12;
         $personNative->name="dan";
         
-        $c=RedBeanEngine::dispense("child");
+        #$c=RedBeanEngine::dispense("child");
+        $c = new Child;
         $c->name="jan";
         $c->bird= new DateTime(); 
         $c2=RedBeanEngine::dispense("child");
@@ -58,6 +60,12 @@ class PersonTest extends TestCase {
         RedBeanEngine::store($personNative);
         DispenseHelper::setEnforceNamingPolicy(false);
         
+    }
+    public function xtestfind(){
+        //find can return multiple result, every result is indexed base on its id, the objects type is SimpleFacadeBeanHelper.
+        $person=RedBeanEngine::find('person',"name='dan'");
+        //var_dump($person);
+        //echo json_encode($person,JSON_PRETTY_PRINT);
     }
 
     public function querytest(){
