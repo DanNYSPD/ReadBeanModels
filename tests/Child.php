@@ -1,7 +1,14 @@
 <?php
-namespace Xarenisoft\ORM;
 
-use Xarenisoft\ORM\Model;
+use Xarenisoft\ReadBean\Models\Model;
+
+
+
+
+
+
+
+
 
 class Child extends Model{
     protected $fillable=['name','bird'];

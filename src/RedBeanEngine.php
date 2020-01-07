@@ -1,5 +1,7 @@
 <?php
-namespace Xarenisoft\ORM;
+namespace Xarenisoft\ReadBean\Models;
+
+
 
 use RedBeanPHP\Facade;
 /**

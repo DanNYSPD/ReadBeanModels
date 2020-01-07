@@ -1,7 +1,11 @@
 <?php
 
+
 use Passion;
-use Xarenisoft\ORM\Model;
+use Xarenisoft\ReadBean\Models\Model;
+
+
+
 
 class Person extends Model{
     public $id;

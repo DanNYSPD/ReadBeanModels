@@ -1,5 +1,6 @@
 <?php 
-namespace Xarenisoft\ORM;
+namespace Xarenisoft\ReadBean\Models;
+
 
 use Medoo\Medoo;
 use League\Event\Emitter;

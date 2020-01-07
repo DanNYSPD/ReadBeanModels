@@ -1,7 +1,11 @@
 <?php 
-namespace Xarenisoft\ORM;
+namespace Xarenisoft\ReadBean\Models;
+
+
+
+
 /**
- * Intension de esta clase es unicamente incrementar la velocidad de consulta e insercion.
+ * This class is intented to map the current implemented class into a readbean bean
  * 
  * 
  */
