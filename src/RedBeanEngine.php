@@ -30,6 +30,21 @@ class RedBeanEngine extends Facade{
         return false;
     }
     
+    private static function initializeModel(string $model){
+        $modelObj= new $model();
+        return $modelObj;
+    }
+    private static function autoCompleteModel(Model $modelObj){
+        if(!$modelObj->hasTableName()){
+            #echo "class:".(get_class($modelObj));
+            #echo "class:".self::get_class_name(get_class($modelObj));
+            $modelObj->setTableName(self::get_class_name(get_class($modelObj)));
+           # echo self::decamelize($modelObj->getTableName());
+            $modelObj->setTableName(self::decamelize($modelObj->getTableName()));
+            #echo "\n".$modelObj->getTableName();
+        }
+        return $modelObj;
+    }
     /**
      * Crea un bean desde el nombre de clase de un model, o desde un objeto model,
      * Esto es pensado para ser la parte final , cuando ya este listo tu objecto para guardar, actualizar. y retornar el bean correspondiente
@@ -40,20 +55,13 @@ class RedBeanEngine extends Facade{
     public static function createBean($model){
         $modelObj=null;
         if(\is_string($model)){
-            $model= new $model();
+            $modelObj= self::initializeModel($model);
             
         }else{
             $modelObj= $model;
         }
 
-        if(!$modelObj->hasTableName()){
-            #echo "class:".(get_class($modelObj));
-            #echo "class:".self::get_class_name(get_class($modelObj));
-            $modelObj->setTableName(self::get_class_name(get_class($modelObj)));
-           # echo self::decamelize($modelObj->getTableName());
-            $modelObj->setTableName(self::decamelize($modelObj->getTableName()));
-            #echo "\n".$modelObj->getTableName();
-        }
+        self::autoCompleteModel($modelObj);
         $bean=self::dispense($modelObj->getTableName());
         foreach ($model->getFillable() as $key => $fieldName) {
             if(\is_int($key)){
@@ -100,5 +108,48 @@ class RedBeanEngine extends Facade{
 
         
         return $classname;
+    }
+    /**
+     * If a class is received, this will return objects of the same  class instead of an array of beans 
+     *
+     * @param [type] $type
+     * @param [type] $sql
+     * @param array $bindings
+     * @param [type] $snippet
+     * @return void
+     */
+    public static function find($type, $sql = NULL, $bindings = array(), $snippet = NULL ){
+        if(class_exists($type)){
+           $model= self::initializeModel($type);
+           $model= self::autoCompleteModel($model);
+
+           return self::processFind(Facade::find($model->getTableName(),$sql,$bindings,$snippet),$type);
+        }
+        return Facade::find($type,$sql,$bindings,$snippet);
+    }
+    private static function processFind($findResult,string $modelClassName){
+        if(empty($findResult)){
+            return $findResult;
+        }
+        $newModelResult=[];
+        foreach ($findResult as $primaryIDValue      => $beanObject) {
+            $newModelResult[$primaryIDValue]=self::fromBeanToModel($beanObject,$modelClassName);
+        }
+        return $newModelResult;
+    }
+    /**
+     * Oposite  function to createBean.
+     *
+     * @param [type] $bean
+     * @param Model $model
+     * @return void
+     */
+    private static function fromBeanToModel($bean,string $model){
+        if($bean==null) return null;
+        $model= self::initializeModel($model);
+        foreach ($model->getFillable() as $property=>$fieldName) {
+           $model->{$property} =$bean->{$fieldName};
+        }
+        return $model;
     }
 }
