@@ -9,12 +9,17 @@ class Person extends Model{
     public $age;
 
     public $isParent=true;
+    public $wasSold=false;
+    public $refence_id;
     public $table='person';
+
     protected $fillable=[
         'bird',
         'name',
         'age',
-        'isParent'=>'is_parent'
+        'isParent'=>'is_parent',
+        'wasSold',
+        'refence_id'
     ];
 
     protected $relations=[

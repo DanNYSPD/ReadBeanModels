@@ -45,7 +45,9 @@ class RedBeanEngine extends Facade{
         $bean=self::dispense($model->getTableName());
         foreach ($model->getFillable() as $key => $fieldName) {
             if(\is_int($key)){
-                $bean->{$fieldName}=$model->{$fieldName};
+                //if key is numeric and  because redbean only allow snake case, we need to convert 'camelCase' and 'PascalCase' to snake_case
+                $snakeCase=self::decamelize($fieldName);
+                $bean->{$snakeCase}=$model->{$fieldName};
             }else{
                 $bean->{$fieldName}=$model->{$key};
             }   
@@ -57,5 +59,8 @@ class RedBeanEngine extends Facade{
             }
         }
         return $bean;
+    }
+    private static function  decamelize($string) {
+        return strtolower(preg_replace(['/([a-z\d])([A-Z])/', '/([^_])([A-Z][a-z])/'], '$1_$2', $string));
     }
 }
