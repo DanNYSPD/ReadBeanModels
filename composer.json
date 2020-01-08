@@ -14,7 +14,7 @@
     },
     "require": {
         "catfan/medoo": "^1.7",
-        "phpunit/phpunit": "^8.5",
+        "phpunit/phpunit": "^7.0",
         "league/event": "^2.2",
         "gabordemooij/redbean": "^5.4"
     }
