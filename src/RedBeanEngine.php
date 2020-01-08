@@ -4,12 +4,17 @@ namespace Xarenisoft\ReadBean\Models;
 
 
 use RedBeanPHP\Facade;
+use RedBeanPHP\OODBBean;
+use Xarenisoft\ReadBean\Models\IModel;
 /**
  * This class extends R in order to allow different kind of models to use RedBean.
  */
 class RedBeanEngine extends Facade{
     /**
-     * Besides normal store, this method allows to receive normal objects and parse it to bean
+     * Besides normal store, this method allows to receive normal objects and parse it to bean.
+     * otherwise an Catchable fata error will be thrwon:Object of class  XXX could not be converted to string.
+     * 
+     * 
      *
      * @param [type] $model
      * @param boolean $unfreezeIfNeeded
@@ -20,7 +25,34 @@ class RedBeanEngine extends Facade{
             $model=self::createBean($model);
             //Facade::store($bean,$unfreezeIfNeeded);
             //return;
+        }else if(!$model instanceof OODBBean){
+            //if it's not a Model instance either, we are gonna try to create the bean.
+            $modelObj = new Model;
+            //in this case, the received object will be tranform into a model Object
+            $modelObj->loadFromObject($model);
+            # we set the real short class name
+            if(property_exists($model,'_type')){
+
+            }else{
+                #we infer the name:
+                $modelObj->setTableName(self::classNameToTableName($model));
+            }
+            
+            #echo \get_class($model);
+            $model=self::createBean($modelObj);
+           
+        }else{ 
+            /*
+             foreach($model->getProperties() as $prop =>$value){
+                if(is_array($value) &&isList($prop) ){
+                    self::createBean();
+                } 
+             }*/
+
         }
+
+
+        
         Facade::store($model,$unfreezeIfNeeded);
     }
     private static function isList(string $property){
@@ -34,7 +66,7 @@ class RedBeanEngine extends Facade{
         $modelObj= new $model();
         return $modelObj;
     }
-    private static function autoCompleteModel(Model $modelObj){
+    private static function autoCompleteModel(IModel $modelObj){
         if(!$modelObj->hasTableName()){
             #echo "class:".(get_class($modelObj));
             #echo "class:".self::get_class_name(get_class($modelObj));
@@ -52,7 +84,7 @@ class RedBeanEngine extends Facade{
      * @param string|Model $model
      * @return void
      */
-    public static function createBean($model){
+    public static function createBean($model,bool $ignoreNull=true){
         $modelObj=null;
         if(\is_string($model)){
             $modelObj= self::initializeModel($model);
@@ -63,30 +95,49 @@ class RedBeanEngine extends Facade{
 
         self::autoCompleteModel($modelObj);
         $bean=self::dispense($modelObj->getTableName());
+        return self::transfer($modelObj,$bean,$ignoreNull);
+    }
+
+    public static function transfer(IModel $model,OODBBean $bean,$ignoreNull=true){
         foreach ($model->getFillable() as $key => $fieldName) {
             if(\is_int($key)){
                 //if key is numeric and  because redbean only allow snake case, we need to convert 'camelCase' and 'PascalCase' to snake_case
                 $snakeCase=self::decamelize($fieldName);
+                if($ignoreNull&&is_null($model->{$fieldName})){
+                    continue;
+                }
                 $bean->{$snakeCase}=$model->{$fieldName};
             }else{
-                $bean->{$fieldName}=$model->{$key};
+                if($ignoreNull&&is_null($model->{$key})){
+                    continue;
+                }
+                $bean->{$fieldName}=$model->{$key};                
             }   
         }
         //besides fillable ,the model can have ownXList so
         foreach ($model as $property => $value) {
-            if(self::isList($property)){
+            if(self::isList($property)|| $model->isInOwnList($property)){
                // $bean->{$property}=$model->{$property};
                 //now we must verify that all the elements are Beans or "Model"
                 if(\is_array($model->{$property})){
-                    $bean->{$property}=[];//we ensure the correct array initialization
+                    if($model->isInOwnList($property)){
+                        #if it's in the _ownList, it means it has a explicit name
+                        $propertyBeanName=$model->getTranslatedOwnListName($property);
+                    }else{
+                        $propertyBeanName=$property;
+                    }
+                    $bean->{$propertyBeanName}=[];//we ensure the correct array initialization
                     //this can be heavy in performance terms but for this version we won't worry about that.
                     foreach ($model->{$property} as $element) {
-                        if($element instanceof Model){
+                       
+                        
+
+                        if($element instanceof IModel){
                             //here we call recursibly
                             
-                            $bean->{$property}[]=self::createBean($element);
+                            $bean->{$propertyBeanName}[]=self::createBean($element);
                         }else{
-                            $bean->{$property}[]=$element;
+                            $bean->{$propertyBeanName}[]=$element;
                         }
                     }
                 }else if(null!==$bean->{$property}){
@@ -151,5 +202,9 @@ class RedBeanEngine extends Facade{
            $model->{$property} =$bean->{$fieldName};
         }
         return $model;
+    }
+
+    private static function classNameToTableName($object):string{
+       return self::decamelize(self::get_class_name(get_class($object)));
     }
 }
