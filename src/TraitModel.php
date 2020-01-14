@@ -1,18 +1,20 @@
 <?php
 namespace Xarenisoft\ReadBean\Models;
 
+use Xarenisoft\ReadBean\Models\RedBeanEngine;
+
 trait TraitModel {
     protected $primaryKey="id";
     protected $fillable=[]; #atrtibutos de la tabla , opcionalmente pueden ser clase=>'nombre_de_campo'
 
-    protected $hidden=[];
+    
 
     protected $_ownList=[];
 
     protected $isSerialId=true;
     protected $table;#nombre de tabla
 
-    protected $relations=[];
+    #protected $relations=[];
 
     public function getFillable(){
         return $this->fillable;
@@ -85,7 +87,17 @@ trait TraitModel {
      */
     public function loadFromObject($object){
         foreach ($object as $property => $value) {
+            //we must ignore this fields
+            if(\in_array($property,['_type','_primary_key','id'])){
+                continue;
+            }
             $this->{$property}=$value;
+        }
+        # we set the real short class name
+        if(property_exists($model,'_type')){
+            $this->setTableName($model->_type);
+        }else{
+            $modelObj->setTableName(RedBeanEngine::classNameToTableName($model));           
         }
     }
     public function getOwnList(){

@@ -30,13 +30,7 @@ class RedBeanEngine extends Facade{
             $modelObj = new Model;
             //in this case, the received object will be tranform into a model Object
             $modelObj->loadFromObject($model);
-            # we set the real short class name
-            if(property_exists($model,'_type')){
-
-            }else{
-                #we infer the name:
-                $modelObj->setTableName(self::classNameToTableName($model));
-            }
+            
             
             #echo \get_class($model);
             $model=self::createBean($modelObj);
@@ -61,7 +55,12 @@ class RedBeanEngine extends Facade{
         }
         return false;
     }
-    
+    /**
+     * Recieves an string class to instanciate
+     *
+     * @param string $model
+     * @return void
+     */
     private static function initializeModel(string $model){
         $modelObj= new $model();
         return $modelObj;
@@ -77,14 +76,16 @@ class RedBeanEngine extends Facade{
         }
         return $modelObj;
     }
-    /**
-     * Crea un bean desde el nombre de clase de un model, o desde un objeto model,
-     * Esto es pensado para ser la parte final , cuando ya este listo tu objecto para guardar, actualizar. y retornar el bean correspondiente
-     *
-     * @param string|Model $model
-     * @return void
-     */
-    public static function createBean($model,bool $ignoreNull=true){
+    /**   
+    * Crea un bean desde el nombre de clase de un model, o desde un objeto model,
+    * Esto es pensado para ser la parte final , cuando ya este listo tu objecto para guardar, actualizar. y retornar el bean correspondiente
+    *
+    * @param string|Model $model   
+    * @param boolean $ignoreNull
+    * @param boolean $ignoreEmtpyString
+    * @return void
+    */
+    public static function createBean($model,bool $ignoreNull=true,bool $ignoreEmtpyString=true){
         $modelObj=null;
         if(\is_string($model)){
             $modelObj= self::initializeModel($model);
@@ -98,7 +99,7 @@ class RedBeanEngine extends Facade{
         return self::transfer($modelObj,$bean,$ignoreNull);
     }
 
-    public static function transfer(IModel $model,OODBBean $bean,$ignoreNull=true){
+    public static function transfer(IModel $model,OODBBean $bean,$ignoreNull=true,$ignoreEmtpyString=true){
         foreach ($model->getFillable() as $key => $fieldName) {
             if(\is_int($key)){
                 //if key is numeric and  because redbean only allow snake case, we need to convert 'camelCase' and 'PascalCase' to snake_case
@@ -106,9 +107,15 @@ class RedBeanEngine extends Facade{
                 if($ignoreNull&&is_null($model->{$fieldName})){
                     continue;
                 }
+                if($ignoreEmtpyString&& ''===$model->{$fieldName}){
+                    continue;
+                }
                 $bean->{$snakeCase}=$model->{$fieldName};
             }else{
                 if($ignoreNull&&is_null($model->{$key})){
+                    continue;
+                }
+                if($ignoreEmtpyString && ''===$model->{$key}){
                     continue;
                 }
                 $bean->{$fieldName}=$model->{$key};                
@@ -131,7 +138,8 @@ class RedBeanEngine extends Facade{
                     foreach ($model->{$property} as $element) {
                        
                         
-
+                        #the firts idea was to deal only with classes of type IModel, but normal clases now will be supported, with
+                        #the assumption that includes _type property and for simple cases all properties will be inserted
                         if($element instanceof IModel){
                             //here we call recursibly
                             
@@ -156,8 +164,6 @@ class RedBeanEngine extends Facade{
         if($pos!=-1){
             return substr($classname, $pos + 1);
         }
-
-        
         return $classname;
     }
     /**
@@ -204,7 +210,7 @@ class RedBeanEngine extends Facade{
         return $model;
     }
 
-    private static function classNameToTableName($object):string{
+    public static function classNameToTableName($object):string{
        return self::decamelize(self::get_class_name(get_class($object)));
     }
 }
