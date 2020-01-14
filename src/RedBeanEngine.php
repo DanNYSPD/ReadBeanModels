@@ -98,7 +98,15 @@ class RedBeanEngine extends Facade{
         $bean=self::dispense($modelObj->getTableName());
         return self::transfer($modelObj,$bean,$ignoreNull);
     }
-
+    /**
+     * Pass attributes from IModelObject to a OODBBean
+     *
+     * @param IModel $model
+     * @param OODBBean $bean
+     * @param boolean $ignoreNull
+     * @param boolean $ignoreEmtpyString
+     * @return OODBBean
+     */
     public static function transfer(IModel $model,OODBBean $bean,$ignoreNull=true,$ignoreEmtpyString=true){
         foreach ($model->getFillable() as $key => $fieldName) {
             if(\is_int($key)){
