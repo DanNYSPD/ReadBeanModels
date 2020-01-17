@@ -18,4 +18,5 @@ interface IModel {
     public function getList();
     public function hasTableName();
     public function loadFromObject($object);
+    public function isFillable(string $propertyName):bool;
 }

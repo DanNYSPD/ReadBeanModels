@@ -22,6 +22,23 @@ trait TraitModel {
     public function getTableFields(){
         return array_values($this->fillable);
     }
+    public function isFillable(string $propertyName):bool{
+        foreach ($this->fillable as $key => $value) {
+            $fillablePropertie='';
+            if(!\is_int($key)){
+                $fillablePropertie=$key;
+                
+            }else{
+                $fillablePropertie=$value;
+            }
+
+           // if(\strpos($fillablePropertie,$propertyName)!==false){ #this causes that substring match
+            if($fillablePropertie==$propertyName){
+                return true;
+            }    
+        }
+        return false;
+    }
     public function getTableName(){
         return $this->table;
     }
@@ -104,7 +121,8 @@ trait TraitModel {
         return $this->_ownList;
     }
     public function isInOwnList(string $propertyName){
-        return isset($this->_ownList[$propertyName]);
+        return isset($this->_ownList[$propertyName]); //this is not used anymore because if the array is based on numeric index, it will throw a false positive
+        #return $this->isFillable($propertyName);
     }
     public function getTranslatedOwnListName($propertyName){
         return $this->_ownList[$propertyName];
