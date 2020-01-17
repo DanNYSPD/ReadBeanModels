@@ -3,6 +3,7 @@ namespace Xarenisoft\ReadBean\Models;
 
 
 
+use RuntimeException;
 use RedBeanPHP\Facade;
 use RedBeanPHP\OODBBean;
 use Xarenisoft\ReadBean\Models\IModel;
@@ -109,6 +110,7 @@ class RedBeanEngine extends Facade{
      */
     public static function transfer(IModel $model,OODBBean $bean,$ignoreNull=true,$ignoreEmtpyString=true){
         foreach ($model->getFillable() as $key => $fieldName) {
+            
             if(\is_int($key)){
                 //if key is numeric and  because redbean only allow snake case, we need to convert 'camelCase' and 'PascalCase' to snake_case
                 $snakeCase=self::decamelize($fieldName);
@@ -131,10 +133,13 @@ class RedBeanEngine extends Facade{
         }
         //besides fillable ,the model can have ownXList so
         foreach ($model as $property => $value) {
-            if(self::isList($property)|| $model->isInOwnList($property)){
+            if($model->isFillable($property)){
+                continue;
+            }
+            if($model->isInOwnList($property)||self::isList($property)){#for performance  isInOwnList must be evaluated first.
                // $bean->{$property}=$model->{$property};
                 //now we must verify that all the elements are Beans or "Model"
-                if(\is_array($model->{$property})){
+                if(\is_array($model->{$property})||\is_object($model->{$property})){
                     if($model->isInOwnList($property)){
                         #if it's in the _ownList, it means it has a explicit name
                         $propertyBeanName=$model->getTranslatedOwnListName($property);
@@ -142,22 +147,42 @@ class RedBeanEngine extends Facade{
                         $propertyBeanName=$property;
                     }
                     $bean->{$propertyBeanName}=[];//we ensure the correct array initialization
-                    //this can be heavy in performance terms but for this version we won't worry about that.
-                    foreach ($model->{$property} as $element) {
-                       
-                        
-                        #the firts idea was to deal only with classes of type IModel, but normal clases now will be supported, with
-                        #the assumption that includes _type property and for simple cases all properties will be inserted
-                        if($element instanceof IModel){
+                    # if it's an object this means that it shuold be model as an array with one element.
+                    if(\is_object($model->{$property})){
+
+                         
+                        if($model->{$property} instanceof IModel){
                             //here we call recursibly
-                            
-                            $bean->{$propertyBeanName}[]=self::createBean($element);
+                           
+                            $bean->{$propertyBeanName}[]=self::createBean($model->{$property});
+                           
                         }else{
-                            $bean->{$propertyBeanName}[]=$element;
+                            $bean->{$propertyBeanName}[]=$model->{$property};
+                        }
+                    }
+                    else if(is_array($model->{$property})){
+                        //this can be heavy in performance terms but for this version we won't worry about that.
+                        foreach ($model->{$property} as $element) {
+                        
+                            
+                            #the firts idea was to deal only with classes of type IModel, but normal clases now will be supported, with
+                            #the assumption that includes _type property and for simple cases all properties will be inserted
+                            if($element instanceof IModel){
+                                //here we call recursibly
+                                
+                                $bean->{$propertyBeanName}[]=self::createBean($element);
+                            }else{
+                                $bean->{$propertyBeanName}[]=$element;
+                            }
                         }
                     }
                 }else if(null!==$bean->{$property}){
                     throw new RuntimeException("property :$property is not an array or null");
+                }else if(\is_scalar($model->{$property})){
+                    throw new RuntimeException("property :$property is scalar, scalars cannot be tranformed into List");
+                }else if(\is_object($model->{$property})){
+                   #  throw new RuntimeException("property :$property is defined as Object but target is on ownList , if you want to include it , set it explicitly as list with *, ");
+
                 }
             }
         }
