@@ -84,9 +84,10 @@ class RedBeanEngine extends Facade{
     * @param string|Model $model   
     * @param boolean $ignoreNull
     * @param boolean $ignoreEmtpyString
+    * @param boolean $includeDefaultPrimarykey If you already have a no bean model with primary key you can included it in the bean, so it can be updated and avoid to create a new one.
     * @return void
     */
-    public static function createBean($model,bool $ignoreNull=true,bool $ignoreEmtpyString=true){
+    public static function createBean($model,bool $ignoreNull=true,bool $ignoreEmtpyString=true,$includeDefaultPrimarykey=false){
         $modelObj=null;
         if(\is_string($model)){
             $modelObj= self::initializeModel($model);
@@ -97,7 +98,7 @@ class RedBeanEngine extends Facade{
 
         self::autoCompleteModel($modelObj);
         $bean=self::dispense($modelObj->getTableName());
-        return self::transfer($modelObj,$bean,$ignoreNull);
+        return self::transfer($modelObj,$bean,$ignoreNull,$ignoreEmtpyString,$includeDefaultPrimarykey);
     }
     /**
      * Pass attributes from IModelObject to a OODBBean
@@ -108,7 +109,7 @@ class RedBeanEngine extends Facade{
      * @param boolean $ignoreEmtpyString
      * @return OODBBean
      */
-    public static function transfer(IModel $model,OODBBean $bean,$ignoreNull=true,$ignoreEmtpyString=true){
+    public static function transfer(IModel $model,OODBBean $bean,$ignoreNull=true,$ignoreEmtpyString=true,$includeDefaultPrimarykey=false){
         foreach ($model->getFillable() as $key => $fieldName) {
             
             if(\is_int($key)){
@@ -154,7 +155,7 @@ class RedBeanEngine extends Facade{
                         if($model->{$property} instanceof IModel){
                             //here we call recursibly
                            
-                            $bean->{$propertyBeanName}[]=self::createBean($model->{$property});
+                            $bean->{$propertyBeanName}[]=self::createBean($model->{$property},$ignoreNull,$ignoreEmtpyString,$includeDefaultPrimarykey);
                            
                         }else{
                             $bean->{$propertyBeanName}[]=$model->{$property};
@@ -170,7 +171,7 @@ class RedBeanEngine extends Facade{
                             if($element instanceof IModel){
                                 //here we call recursibly
                                 
-                                $bean->{$propertyBeanName}[]=self::createBean($element);
+                                $bean->{$propertyBeanName}[]=self::createBean($element,$ignoreNull,$ignoreEmtpyString,$includeDefaultPrimarykey);
                             }else{
                                 $bean->{$propertyBeanName}[]=$element;
                             }
@@ -185,6 +186,9 @@ class RedBeanEngine extends Facade{
 
                 }
             }
+        }
+        if($includeDefaultPrimarykey && property_exists($model,'id')){
+            $bean->id=$model->id;
         }
         return $bean;
     }
